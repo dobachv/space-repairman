@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Космический Ремонтник</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #05060f;
+    color: #e0e8ff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    position: relative;
+  }
+
+  /* ===== КОСМИЧЕСКИЙ ФОН ===== */
+  #stars, #stars2, #stars3 {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .nebula {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 30%, rgba(120, 60, 220, 0.25), transparent),
+      radial-gradient(ellipse 50% 50% at 80% 70%, rgba(30, 120, 220, 0.22), transparent),
+      radial-gradient(ellipse 40% 30% at 50% 90%, rgba(220, 60, 160, 0.15), transparent);
+    animation: nebulaMove 25s ease-in-out infinite alternate;
+  }
+  @keyframes nebulaMove {
+    0% { transform: scale(1) translate(0, 0); }
+    100% { transform: scale(1.15) translate(-20px, 20px); }
+  }
+
+  .planet {
+    position: fixed;
+    right: -120px;
+    bottom: -120px;
+    width: 340px;
+    height: 340px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #6b8cff, #2a3a7a 60%, #10152e 100%);
+    box-shadow:
+      0 0 80px rgba(107, 140, 255, 0.4),
+      inset -30px -30px 80px rgba(0, 0, 0, 0.7);
+    z-index: 0;
+    opacity: 0.55;
+    pointer-events: none;
+    animation: planetFloat 12s ease-in-out infinite;
+  }
+  @keyframes planetFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-25px); }
+  }
+
+  .planet::after {
+    content: '';
+    position: absolute;
+    inset: -40px;
+    border-radius: 50%;
+    border: 3px solid rgba(150, 180, 255, 0.25);
+    transform: rotate(-25deg) scaleX(1.4);
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+  }
+
+  /* Звёзды — три слоя для параллакса */
+  #stars, #stars2, #stars3 {
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, #fff, transparent),
+      radial-gradient(1px 1px at 30% 60%, #cfe3ff, transparent),
+      radial-gradient(1px 1px at 50% 30%, #fff, transparent),
+      radial-gradient(1px 1px at 70% 80%, #cfe3ff, transparent),
+      radial-gradient(1px 1px at 90% 15%, #fff, transparent),
+      radial-gradient(1px 1px at 15% 85%, #fff, transparent),
+      radial-gradient(1px 1px at 45% 90%, #cfe3ff, transparent),
+      radial-gradient(1px 1px at 85% 50%, #fff, transparent),
+      radial-gradient(1px 1px at 25% 40%, #fff, transparent),
+      radial-gradient(1px 1px at 65% 10%, #cfe3ff, transparent);
+    background-size: 200% 200%;
+  }
+  #stars  { animation: drift1 90s linear infinite; opacity: 0.8; }
+  #stars2 {
+    background-size: 350% 350%;
+    animation: drift2 140s linear infinite;
+    opacity: 0.6;
+  }
+  #stars3 {
+    background-size: 500% 500%;
+    animation: drift3 200s linear infinite;
+    opacity: 0.4;
+  }
+  @keyframes drift1 {
+    from { background-position: 0 0; }
+    to   { background-position: 200% 100%; }
+  }
+  @keyframes drift2 {
+    from { background-position: 100% 0; }
+    to   { background-position: 0 100%; }
+  }
+  @keyframes drift3 {
+    from { background-position: 50% 100%; }
+    to   { background-position: 0 0; }
+  }
+
+  /* ===== ОСНОВНАЯ ПАНЕЛЬ ===== */
+  .game {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 940px;
+    background: linear-gradient(145deg, rgba(30, 42, 85, 0.92), rgba(19, 26, 53, 0.95));
+    border: 2px solid #3a5fa8;
+    border-radius: 24px;
+    padding: 26px 32px 30px;
+    box-shadow:
+      0 0 60px rgba(80, 140, 255, 0.35),
+      inset 0 0 40px rgba(50, 100, 200, 0.15);
+    backdrop-filter: blur(6px);
+    animation: gameAppear 0.7s ease-out;
+  }
+  @keyframes gameAppear {
+    from { opacity: 0; transform: translateY(30px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Тряска корабля при ошибке */
+  .game.shake {
+    animation: shipShake 0.5s ease-in-out;
+  }
+  @keyframes shipShake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-10px) rotate(-0.4deg); }
+    30% { transform: translateX(10px) rotate(0.4deg); }
+    45% { transform: translateX(-8px) rotate(-0.3deg); }
+    60% { transform: translateX(8px) rotate(0.3deg); }
+    80% { transform: translateX(-4px); }
+  }
+
+  /* Вспышка при победе */
+  .game.flash {
+    animation: shipFlash 0.8s ease-out;
+  }
+  @keyframes shipFlash {
+    0%   { box-shadow: 0 0 60px rgba(80, 140, 255, 0.35), inset 0 0 40px rgba(50,100,200,0.15); }
+    30%  { box-shadow: 0 0 120px rgba(74, 222, 128, 0.9), inset 0 0 60px rgba(74,222,128,0.4); border-color: #4ade80; }
+    100% { box-shadow: 0 0 60px rgba(80, 140, 255, 0.35), inset 0 0 40px rgba(50,100,200,0.15); border-color: #3a5fa8; }
+  }
+
+  /* ===== ШАПКА ===== */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #7fd0ff;
+    text-shadow: 0 0 12px rgba(127, 208, 255, 0.6);
+    letter-spacing: 1px;
+  }
+  .title .rocket {
+    display: inline-block;
+    animation: rocketBob 2.2s ease-in-out infinite;
+  }
+  @keyframes rocketBob {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-4px) rotate(-6deg); }
+  }
+
+  .progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .progress-bar {
+    width: 160px;
+    height: 12px;
+    background: #0a1024;
+    border: 2px solid #3a5fa8;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #4ade80, #7fd0ff);
+    border-radius: 6px;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 12px #4ade80;
+  }
+  .progress-text {
+    font-size: 14px;
+    color: #7fd0ff;
+    font-weight: 700;
+    min-width: 42px;
+    text-align: right;
+  }
+
+  /* ===== ЭКРАН КОМПЬЮТЕРА ===== */
+  .screen {
+    background: #050a18;
+    border: 2px solid #2a4a7a;
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-family: 'Consolas', monospace;
+    box-shadow: inset 0 0 30px rgba(0, 100, 200, 0.2);
+    min-height: 100px;
+    position: relative;
+    overflow: hidden;
+  }
+  .screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(127, 208, 255, 0.05) 0px,
+      rgba(127, 208, 255, 0.05) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+  }
+
+  .screen-line {
+    margin: 5px 0;
+    font-size: 16px;
+    line-height: 1.5;
+    position: relative;
+    z-index: 1;
+  }
+  .screen-line .label { color: #4a7ad0; }
+
+  .screen-line .typed {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid #7fd0ff;
+    animation: typing 1.2s steps(40) 1 both;
+  }
+  @keyframes typing {
+    from { width: 0; }
+    to   { width: 100%; border-right: 2px solid transparent; }
+  }
+
+  .alert {
+    color: #ff8080;
+    animation: blink 1s infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* ===== СЕКТОР ===== */
+  .sector-name {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffd966;
+    margin-bottom: 16px;
+    text-shadow: 0 0 15px rgba(255, 217, 102, 0.5);
+    animation: sectorIn 0.5s ease-out;
+  }
+  @keyframes sectorIn {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== ЗАДАЧА ===== */
+  .task {
+    text-align: center;
+    font-size: 22px;
+    margin-bottom: 22px;
+    line-height: 1.9;
+  }
+
+  .fraction {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: middle;
+    margin: 0 6px;
+    text-align: center;
+    animation: fracIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes fracIn {
+    from { opacity: 0; transform: scale(0.5) rotate(-8deg); }
+    to   { opacity: 1; transform: scale(1) rotate(0); }
+  }
+
+  .fraction .num {
+    border-bottom: 2px solid #7fd0ff;
+    padding: 0 10px 2px;
+    color: #7fd0ff;
+  }
+  .fraction .den {
+    padding: 2px 10px 0;
+    color: #7fd0ff;
+  }
+
+  .arrow {
+    color: #fbbf24;
+    font-size: 26px;
+    margin: 0 10px;
+    display: inline-block;
+    animation: arrowPulse 1.4s ease-in-out infinite;
+  }
+  @keyframes arrowPulse {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(8px); }
+  }
+
+  .target {
+    color: #4ade80;
+    font-weight: 700;
+    animation: targetGlow 2s ease-in-out infinite;
+  }
+  @keyframes targetGlow {
+    0%, 100% { text-shadow: 0 0 8px rgba(74, 222, 128, 0.4); }
+    50% { text-shadow: 0 0 20px rgba(74, 222, 128, 0.9); }
+  }
+
+  /* ===== ВВОД ===== */
+  .input-zone {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .input-label {
+    font-size: 18px;
+    color: #a0b8e8;
+  }
+
+  .key-input {
+    background: #050a18;
+    border: 2px solid #3a5fa8;
+    border-radius: 10px;
+    color: #7fd0ff;
+    font-size: 20px;
+    font-family: 'Consolas', monospace;
+    padding: 10px 16px;
+    width: 220px;
+    text-align: center;
+    outline: none;
+    transition: all 0.3s;
+  }
+  .key-input:focus {
+    border-color: #7fd0ff;
+    box-shadow: 0 0 15px rgba(127, 208, 255, 0.5);
+  }
+  .key-input.error {
+    border-color: #ff6060;
+    animation: shake 0.4s;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  /* ===== КНОПКИ ===== */
+  .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 600;
+    padding: 12px 28px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+  }
+  button::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.5s, height 0.5s;
+  }
+  button:active::before {
+    width: 300px; height: 300px;
+    transition: width 0s, height 0s;
+  }
+
+  .btn-check {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.5);
+  }
+  .btn-check:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(37, 99, 235, 0.75);
+  }
+
+  .btn-hint {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: white;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.5);
+  }
+  .btn-hint:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(124, 58, 237, 0.75);
+  }
+
+  .btn-next {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: white;
+    box-shadow: 0 4px 15px rgba(22, 163, 74, 0.5);
+    display: none;
+    animation: nextPulse 1.4s ease-in-out infinite;
+  }
+  @keyframes nextPulse {
+    0%, 100% { box-shadow: 0 4px 15px rgba(22, 163, 74, 0.5); }
+    50% { box-shadow: 0 6px 28px rgba(22, 163, 74, 0.95); }
+  }
+  .btn-next:hover {
+    transform: translateY(-2px);
+  }
+
+  .btn-restart {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5);
+  }
+
+  /* ===== СООБЩЕНИЕ ===== */
+  .message {
+    text-align: center;
+    font-size: 18px;
+    min-height: 30px;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+  .message.ok {
+    color: #4ade80;
+    text-shadow: 0 0 12px rgba(74, 222, 128, 0.6);
+    animation: msgPop 0.4s ease-out;
+  }
+  .message.fail { color: #ff8080; animation: msgPop 0.4s ease-out; }
+  .message.hint { color: #fbbf24; animation: msgPop 0.4s ease-out; }
+  @keyframes msgPop {
+    0% { transform: scale(0.7); opacity: 0; }
+    70% { transform: scale(1.08); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* ===== УМНАЯ ПОДСКАЗКА ===== */
+  .hint-box {
+    background: rgba(124, 58, 237, 0.12);
+    border: 2px solid #7c3aed;
+    border-radius: 14px;
+    padding: 16px 22px;
+    margin: 14px auto;
+    max-width: 640px;
+    display: none;
+    text-align: center;
+    font-size: 18px;
+    line-height: 2;
+    color: #d8c8ff;
+    animation: hintAppear 0.5s ease-out;
+    box-shadow: 0 0 25px rgba(124, 58, 237, 0.35);
+  }
+  @keyframes hintAppear {
+    from { opacity: 0; transform: translateY(-10px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .hint-title {
+    font-size: 15px;
+    color: #a78bfa;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .hint-line {
+    margin: 8px 0;
+    font-family: 'Consolas', monospace;
+    font-size: 19px;
+  }
+
+  /* Подсветка части знаменателя, которую нужно "добавить" */
+  .hl {
+    color: #ffd966;
+    font-weight: 700;
+    text-shadow: 0 0 12px rgba(255, 217, 102, 0.8);
+    background: rgba(255, 217, 102, 0.12);
+    border-radius: 6px;
+    padding: 0 6px;
+    animation: hlPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes hlPulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 217, 102, 0); }
+    50% { box-shadow: 0 0 14px rgba(255, 217, 102, 0.6); }
+  }
+
+  .hint-arrow {
+    color: #a78bfa;
+    font-size: 22px;
+    margin: 6px 0;
+  }
+
+  .hint-key {
+    margin-top: 12px;
+    font-size: 20px;
+    color: #4ade80;
+    font-weight: 700;
+    animation: keyGlow 1.5s ease-in-out infinite;
+  }
+  @keyframes keyGlow {
+    0%, 100% { text-shadow: 0 0 8px rgba(74, 222, 128, 0.4); }
+    50% { text-shadow: 0 0 20px rgba(74, 222, 128, 1); }
+  }
+
+  /* ===== РЕШЕНИЕ ===== */
+  .solution-box {
+    background: rgba(74, 222, 128, 0.1);
+    border: 2px solid #4ade80;
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin: 14px auto;
+    max-width: 640px;
+    display: none;
+    text-align: center;
+    font-size: 17px;
+    color: #4ade80;
+    line-height: 1.7;
+    animation: hintAppear 0.5s ease-out;
+  }
+
+  /* ===== ФИНАЛ ===== */
+  .final {
+    display: none;
+    text-align: center;
+    padding: 30px 20px;
+    animation: finalIn 0.8s ease-out;
+  }
+  @keyframes finalIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .final h2 {
+    font-size: 34px;
+    color: #ffd966;
+    margin-bottom: 16px;
+    text-shadow: 0 0 25px rgba(255, 217, 102, 0.8);
+    animation: glow 1.5s infinite alternate;
+  }
+  @keyframes glow {
+    from { text-shadow: 0 0 15px rgba(255, 217, 102, 0.5); }
+    to   { text-shadow: 0 0 35px rgba(255, 217, 102, 1); }
+  }
+  .final p {
+    font-size: 20px;
+    color: #a0b8e8;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+  .certificate {
+    background: linear-gradient(145deg, rgba(30, 42, 85, 0.9), rgba(15, 23, 48, 0.95));
+    border: 3px dashed #ffd966;
+    border-radius: 16px;
+    padding: 26px;
+    margin: 20px auto;
+    max-width: 520px;
+    animation: certIn 1s ease-out 0.3s both;
+  }
+  @keyframes certIn {
+    from { opacity: 0; transform: rotate(-3deg) scale(0.9); }
+    to   { opacity: 1; transform: rotate(0) scale(1); }
+  }
+  .certificate .cert-title {
+    font-size: 24px;
+    color: #ffd966;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .certificate .cert-text {
+    font-size: 16px;
+    color: #a0b8e8;
+    line-height: 1.7;
+  }
+
+  /* ===== ЧАСТИЦЫ ===== */
+  .particle {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 100;
+    animation: particleFly 1s ease-out forwards;
+  }
+  @keyframes particleFly {
+    0% { transform: translate(0, 0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+  }
+
+  @media (max-width: 600px) {
+    .game { padding: 18px 16px; }
+    .title { font-size: 18px; }
+    .task { font-size: 18px; }
+    .sector-name { font-size: 20px; }
+    button { font-size: 15px; padding: 10px 20px; }
+    .progress-bar { width: 100px; }
+    .hint-box { font-size: 16px; }
+    .hint-line { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Фоновые слои -->
+<div class="nebula"></div>
+<div id="stars"></div>
+<div id="stars2"></div>
+<div id="stars3"></div>
+<div class="planet"></div>
+
+<div class="game" id="game">
+  <!-- Шапка -->
+  <div class="header">
+    <div class="title"><span class="rocket">🚀</span> КОСМИЧЕСКИЙ РЕМОНТНИК</div>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">0%</div>
+    </div>
+  </div>
+
+  <!-- Экран компьютера -->
+  <div class="screen" id="screen"></div>
+
+  <!-- Основной контент -->
+  <div id="mainContent">
+    <div class="sector-name" id="sectorName"></div>
+
+    <div class="task" id="task"></div>
+
+    <div class="input-zone">
+      <span class="input-label">🔑 Ключ калибровки:</span>
+      <input type="text" class="key-input" id="keyInput" placeholder="введите множитель"
+             autocomplete="off" spellcheck="false">
+    </div>
+
+    <!-- Умная подсказка -->
+    <div class="hint-box" id="hintBox"></div>
+
+    <!-- Решение -->
+    <div class="solution-box" id="solutionBox"></div>
+
+    <div class="buttons">
+      <button class="btn-check" id="btnCheck" onclick="checkAnswer()">⚡ Проверить</button>
+      <button class="btn-hint" id="btnHint" onclick="showHint()">💡 Подсказка</button>
+      <button class="btn-next" id="btnNext" onclick="nextSector()">➡️ Следующий отсек</button>
+    </div>
+
+    <div class="message" id="message"></div>
+  </div>
+
+  <!-- Финальный экран -->
+  <div class="final" id="final">
+    <h2>🎉 КОРАБЛЬ ПОЧИНЕН! 🎉</h2>
+    <p>Все системы работают в штатном режиме.<br>Уровень кислорода 100%. Курс проложен.</p>
+    <div class="certificate">
+      <div class="cert-title">📜 СЕРТИФИКАТ</div>
+      <div class="cert-text">
+        Настоящий документ подтверждает, что<br>
+        <strong style="color:#7fd0ff; font-size:20px;">Главный Инженер Галактики</strong><br>
+        успешно откалибровал все энергетические блоки<br>
+        и спас космический корабль!
+      </div>
+    </div>
+    <button class="btn-restart" onclick="restartGame()">🔄 Играть снова</button>
+  </div>
+</div>
+
+<script>
+// ==================== ДАННЫЕ УРОВНЕЙ ====================
+// hintFactor — ЧАСТЬ знаменателя, которую нужно "добавить" (подсвечивается в подсказке)
+const levels = [
+  {
+    sector: "🔧 ОТСЕК 1: ДВИГАТЕЛЬ",
+    alert: "Падает тяга двигателя!",
+    from: { num: "2", den: "3a" },
+    to: "12a²",
+    // Разложение нового знаменателя на множители (для подсказки)
+    toFactors: "3a · <span class='hl'>4a</span>",
+    oldDen: "3a",
+    hintFactor: "4a",
+    answer: "4a",
+    answerAlt: ["4a", "4*a", "4 a", "a4", "4а"],
+    solution: "12a² = 3a · <b>4a</b>, значит ключ калибровки = <b>4a</b>",
+    task: "Приведи дробь к знаменателю 12a²"
+  },
+  {
+    sector: "🛡️ ОТСЕК 2: ЩИТЫ",
+    alert: "Щиты теряют энергию!",
+    from: { num: "4", den: "x−3" },
+    to: "2x − 6",
+    toFactors: "2 · <span class='hl'>(x − 3)</span>",
+    oldDen: "x − 3",
+    hintFactor: "(x − 3)",
+    answer: "2",
+    answerAlt: ["2", "2.0"],
+    solution: "2x − 6 = <b>2</b>(x − 3), значит ключ калибровки = <b>2</b>",
+    task: "Приведи дробь к знаменателю 2x − 6"
+  },
+  {
+    sector: "🧭 ОТСЕК 3: НАВИГАЦИЯ",
+    alert: "Навигация сбилась с курса!",
+    from: { num: "a", den: "a+5" },
+    to: "a² − 25",
+    toFactors: "(a + 5) · <span class='hl'>(a − 5)</span>",
+    oldDen: "a + 5",
+    hintFactor: "(a − 5)",
+    answer: "a−5",
+    answerAlt: ["a-5", "a - 5", "a–5", "a—5", "a-5", "(a-5)", "(a−5)"],
+    solution: "a² − 25 = (a + 5)(a − 5), значит ключ калибровки = <b>a − 5</b>",
+    task: "Приведи дробь к знаменателю a² − 25"
+  },
+  {
+    sector: "💻 ОТСЕК 4: ГЛАВНЫЙ КОМПЬЮТЕР",
+    alert: "Главный компьютер перегревается!",
+    from: { num: "5", den: "x−2" },
+    to: "x² − 4x + 4",
+    toFactors: "(x − 2) · <span class='hl'>(x − 2)</span>",
+    oldDen: "x − 2",
+    hintFactor: "(x − 2)",
+    answer: "x−2",
+    answerAlt: ["x-2", "x - 2", "x–2", "x—2", "(x-2)", "(x−2)"],
+    solution: "x² − 4x + 4 = (x − 2)², значит ключ калибровки = <b>x − 2</b>",
+    task: "Приведи дробь к знаменателю x² − 4x + 4"
+  }
+];
+
+// ==================== СОСТОЯНИЕ ====================
+let current = 0;
+let hintShown = false;
+let solved = false;
+
+// ==================== ОТРИСОВКА ====================
+function render() {
+  const lvl = levels[current];
+
+  // Прогресс-бар
+  const percent = Math.round((current / levels.length) * 100);
+  document.getElementById('progressFill').style.width = percent + '%';
+  document.getElementById('progressText').textContent = percent + '%';
+
+  // Экран
+  document.getElementById('screen').innerHTML = `
+    <div class="screen-line"><span class="label">> БОРТОВОЙ КОМПЬЮТЕР:</span></div>
+    <div class="screen-line alert"><span class="typed">⚠ ${lvl.alert}</span></div>
+    <div class="screen-line"><span class="label">> Исходный блок:</span> ${fracHTML(lvl.from.num, lvl.from.den)}</div>
+    <div class="screen-line"><span class="label">> Порт принимает знаменатель:</span> <span class="target">${lvl.to}</span></div>
+  `;
+
+  // Сектор
+  document.getElementById('sectorName').textContent = lvl.sector;
+
+  // Задача
+  document.getElementById('task').innerHTML = `
+    ${fracHTML(lvl.from.num, lvl.from.den)}
+    <span class="arrow">→</span>
+    <span class="target">?</span> / <span class="target">${lvl.to}</span>
+    <br><small style="font-size:15px; color:#a0b8e8;">${lvl.task}</small>
+  `;
+
+  // Сброс
+  hintShown = false;
+  solved = false;
+  const input = document.getElementById('keyInput');
+  input.value = '';
+  input.classList.remove('error');
+  input.disabled = false;
+  setTimeout(() => input.focus(), 100);
+
+  document.getElementById('message').textContent = '';
+  document.getElementById('message').className = 'message';
+  document.getElementById('hintBox').style.display = 'none';
+  document.getElementById('hintBox').innerHTML = '';
+  document.getElementById('solutionBox').style.display = 'none';
+  document.getElementById('solutionBox').innerHTML = '';
+  document.getElementById('btnCheck').style.display = 'inline-block';
+  document.getElementById('btnCheck').disabled = false;
+  document.getElementById('btnHint').style.display = 'inline-block';
+  document.getElementById('btnHint').disabled = false;
+  document.getElementById('btnNext').style.display = 'none';
+}
+
+function fracHTML(num, den) {
+  return `<span class="fraction">
+    <span class="num">${num}</span>
+    <span class="den">${den}</span>
+  </span>`;
+}
+
+// ==================== ПРОВЕРКА ====================
+function checkAnswer() {
+  if (solved) return;
+  const lvl = levels[current];
+  const input = document.getElementById('keyInput');
+  const msg = document.getElementById('message');
+  const raw = input.value.trim().replace(/\s+/g, '').replace(/[−–—]/g, '-').toLowerCase();
+
+  if (!raw) {
+    msg.textContent = '⚠ Введи ключ калибровки!';
+    msg.className = 'message fail';
+    input.classList.add('error');
+    setTimeout(() => input.classList.remove('error'), 500);
+    return;
+  }
+
+  const normalize = s => s.replace(/\s+/g, '').replace(/[−–—]/g, '-').toLowerCase();
+  const correct = lvl.answerAlt.some(a => normalize(a) === raw);
+
+  if (correct) {
+    solved = true;
+    input.disabled = true;
+    input.classList.remove('error');
+
+    msg.textContent = '✅ Система спасена! Деталь совместима!';
+    msg.className = 'message ok';
+
+    // Скрыть подсказку, показать решение
+    document.getElementById('hintBox').style.display = 'none';
+    const box = document.getElementById('solutionBox');
+    box.innerHTML = `🔧 ${lvl.solution}`;
+    box.style.display = 'block';
+
+    // Анимации победы
+    document.getElementById('game').classList.add('flash');
+    setTimeout(() => document.getElementById('game').classList.remove('flash'), 900);
+    spawnParticles();
+
+    document.getElementById('btnCheck').style.display = 'none';
+    document.getElementById('btnHint').style.display = 'none';
+
+    if (current < levels.length - 1) {
+      document.getElementById('btnNext').style.display = 'inline-block';
+    } else {
+      setTimeout(showFinal, 1400);
+    }
+
+    playBeep(880, 0.15);
+    setTimeout(() => playBeep(1174, 0.15), 120);
+  } else {
+    msg.textContent = '❌ Ошибка совместимости! Деталь перегревается. Проверь ключ калибровки.';
+    msg.className = 'message fail';
+    input.classList.add('error');
+    setTimeout(() => input.classList.remove('error'), 500);
+
+    // Тряска корабля
+    const g = document.getElementById('game');
+    g.classList.add('shake');
+    setTimeout(() => g.classList.remove('shake'), 500);
+
+    playBeep(220, 0.3);
+  }
+}
+
+// ==================== УМНАЯ ПОДСКАЗКА ====================
+function showHint() {
+  if (solved || hintShown) return;
+  hintShown = true;
+  const lvl = levels[current];
+  const box = document.getElementById('hintBox');
+
+  // Если поле пустое — подсветим его
+  const inp = document.getElementById('keyInput');
+  inp.focus();
+
+  box.innerHTML = `
+    <div class="hint-title">💡 Подсказка Бортового Компьютера</div>
+    <div class="hint-line">Разложим новый знаменатель на множители:</div>
+    <div class="hint-line" style="font-size:22px; color:#4ade80;">
+      ${lvl.to} = ${lvl.toFactors}
+    </div>
+    <div class="hint-arrow">⬇</div>
+    <div class="hint-line">
+      Старый знаменатель: <b style="color:#7fd0ff;">${lvl.oldDen}</b><br>
+      Не хватает множителя: <span class="hl">${lvl.hintFactor}</span>
+    </div>
+    <div class="hint-key">🔑 Ключ калибровки: ${lvl.answer}</div>
+  `;
+  box.style.display = 'block';
+
+  // Плавная прокрутка к подсказке
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  document.getElementById('message').textContent = '';
+  document.getElementById('message').className = 'message';
+
+  playBeep(660, 0.12);
+}
+
+// ==================== ЧАСТИЦЫ ====================
+function spawnParticles() {
+  const game = document.getElementById('game');
+  const rect = game.getBoundingClientRect();
+  const colors = ['#4ade80', '#7fd0ff', '#ffd966', '#fbbf24', '#a78bfa', '#ffffff'];
+
+  for (let i = 0; i < 26; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const size = 6 + Math.random() * 10;
+    const startX = rect.left + rect.width / 2 + (Math.random() - 0.5) * rect.width * 0.6;
+    const startY = rect.top + rect.height / 2 + (Math.random() - 0.5) * rect.height * 0.5;
+    const dx = (Math.random() - 0.5) * 500;
+    const dy = (Math.random() - 0.5) * 500 - 150;
+
+    p.style.cssText = `
+      left: ${startX}px;
+      top: ${startY}px;
+      width: ${size}px;
+      height: ${size}px;
+      background: ${color};
+      box-shadow: 0 0 ${size * 2}px ${color};
+      --dx: ${dx}px;
+      --dy: ${dy}px;
+    `;
+    p.style.animationDuration = (0.8 + Math.random() * 0.7) + 's';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1800);
+  }
+}
+
+// ==================== СЛЕДУЮЩИЙ ====================
+function nextSector() {
+  current++;
+  render();
+}
+
+// ==================== ФИНАЛ ====================
+function showFinal() {
+  document.getElementById('mainContent').style.display = 'none';
+  document.getElementById('final').style.display = 'block';
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressText').textContent = '100%';
+
+  playBeep(1046, 0.2);
+  setTimeout(() => playBeep(1318, 0.2), 200);
+  setTimeout(() => playBeep(1568, 0.4), 400);
+
+  // Салют из частиц
+  for (let i = 0; i < 4; i++) {
+    setTimeout(spawnParticles, i * 250);
+  }
+}
+
+// ==================== РЕСТАРТ ====================
+function restartGame() {
+  current = 0;
+  document.getElementById('mainContent').style.display = 'block';
+  document.getElementById('final').style.display = 'none';
+  document.getElementById('game').style.animation = 'none';
+  setTimeout(() => document.getElementById('game').style.animation = '', 50);
+  render();
+}
+
+// ==================== ЗВУК ====================
+function playBeep(freq, duration) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) { /* без звука */ }
+}
+
+// ==================== СТАРТ ====================
+document.addEventListener('DOMContentLoaded', () => {
+  render();
+  document.getElementById('keyInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (solved && current < levels.length - 1) nextSector();
+      else checkAnswer();
+    }
+  });
+});
+</script>
+</body>
+</html>
